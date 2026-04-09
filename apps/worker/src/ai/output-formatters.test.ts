@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { filterJsonToolCalls } from './output-formatters.js';
 
 describe('filterJsonToolCalls', () => {
@@ -18,7 +18,8 @@ describe('filterJsonToolCalls', () => {
   });
 
   it('formats Task tool calls properly', () => {
-    const text = 'Starting...\n{"type":"tool_use","name":"Task","id":"123","input":{"description":"search agent"}}\nDone';
+    const text =
+      'Starting...\n{"type":"tool_use","name":"Task","id":"123","input":{"description":"search agent"}}\nDone';
     expect(filterJsonToolCalls(text)).toBe('Starting...\n🚀 Launching search agent\nDone');
   });
 
@@ -28,17 +29,20 @@ describe('filterJsonToolCalls', () => {
   });
 
   it('formats TodoWrite tool calls properly with completed task', () => {
-    const text = '{"type":"tool_use","name":"TodoWrite","id":"123","input":{"todos":[{"id":"1","status":"completed","content":"test item"}]}}';
+    const text =
+      '{"type":"tool_use","name":"TodoWrite","id":"123","input":{"todos":[{"id":"1","status":"completed","content":"test item"}]}}';
     expect(filterJsonToolCalls(text)).toBe('✅ test item');
   });
 
   it('formats TodoWrite tool calls properly with in_progress task', () => {
-    const text = '{"type":"tool_use","name":"TodoWrite","id":"123","input":{"todos":[{"id":"1","status":"in_progress","content":"test item"}]}}';
+    const text =
+      '{"type":"tool_use","name":"TodoWrite","id":"123","input":{"todos":[{"id":"1","status":"in_progress","content":"test item"}]}}';
     expect(filterJsonToolCalls(text)).toBe('🔄 test item');
   });
 
   it('formats Bash tool calls containing playwright-cli', () => {
-    const text = '{"type":"tool_use","name":"Bash","id":"123","input":{"command":"npx playwright-cli goto https://example.com"}}';
+    const text =
+      '{"type":"tool_use","name":"Bash","id":"123","input":{"command":"npx playwright-cli goto https://example.com"}}';
     expect(filterJsonToolCalls(text)).toBe('🌐 Navigating to example.com');
   });
 

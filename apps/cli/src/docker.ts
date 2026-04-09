@@ -202,6 +202,30 @@ export interface WorkerOptions {
  * Spawn the worker container in detached mode and return the process.
  */
 export function spawnWorker(opts: WorkerOptions): ChildProcess {
+  // Validate URL to prevent command injection and ensure it's well-formed
+  try {
+    const parsedUrl = new URL(opts.url);
+    if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+      throw new Error(`Invalid URL protocol: ${parsedUrl.protocol}`);
+    }
+  } catch (err) {
+    if (err instanceof Error && err.message.includes('protocol')) {
+      throw err;
+    }
+    throw new Error(`Invalid URL: ${opts.url}`);
+  }
+
+  // Sanitize container name and other inputs to prevent command injection
+  if (!/^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/.test(opts.containerName)) {
+    throw new Error(`Invalid container name: ${opts.containerName}`);
+  }
+  if (!/^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/.test(opts.taskQueue)) {
+    throw new Error(`Invalid task queue name: ${opts.taskQueue}`);
+  }
+  if (!/^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/.test(opts.workspace)) {
+    throw new Error(`Invalid workspace name: ${opts.workspace}`);
+  }
+
   const args = ['run', '-d', '--rm', '--name', opts.containerName, '--network', 'shannon-net'];
 
   // Add host flag for Linux

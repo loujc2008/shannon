@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { getMode, setMode, isLocal, Mode } from './mode.js';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { getMode, isLocal, type Mode, setMode } from './mode.js';
 
 describe('mode', () => {
   beforeEach(() => {
