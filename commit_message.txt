@@ -1,0 +1,5 @@
+🧪 Add tests for CLI mode checker
+
+🎯 What: The testing gap for the CLI `isLocal` mode checker in `apps/cli/src/mode.ts` has been addressed.
+📊 Coverage: Added unit tests using Vitest to cover `getMode`, `setMode`, and `isLocal` functions. Tested scenarios include checking `SHANNON_LOCAL=1` ('local'), `SHANNON_LOCAL=0` ('npx'), undefined state, and internal caching behavior.
+✨ Result: The mode module is now fully covered by tests, improving the reliability and safety when refactoring CLI startup logic.
