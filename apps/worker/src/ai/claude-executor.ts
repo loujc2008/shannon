@@ -134,6 +134,7 @@ export async function runClaudePrompt(
   logger: ActivityLogger,
   modelTier: ModelTier = 'medium',
   outputFormat?: JsonSchemaOutputFormat,
+  extraEnv?: Record<string, string>,
 ): Promise<ClaudePromptResult> {
   // 1. Initialize timing and prompt
   const timer = new Timer(`agent-${description.toLowerCase().replace(/\s+/g, '-')}`);
@@ -153,6 +154,7 @@ export async function runClaudePrompt(
   const sdkEnv: Record<string, string> = {
     CLAUDE_CODE_MAX_OUTPUT_TOKENS: process.env.CLAUDE_CODE_MAX_OUTPUT_TOKENS || '64000',
     PLAYWRIGHT_MCP_OUTPUT_DIR: path.join(sourceDir, '.shannon', '.playwright-cli'),
+    ...(extraEnv || {}),
   };
   const passthroughVars = [
     'ANTHROPIC_API_KEY',
