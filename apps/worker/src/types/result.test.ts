@@ -32,6 +32,27 @@ describe('Result types', () => {
       const result = err('not found');
       expect(result).toEqual({ ok: false, error: 'not found' });
     });
+    it('should work with null', () => {
+      const result = err(null);
+      expect(result).toEqual({ ok: false, error: null });
+    });
+
+    it('should work with custom objects', () => {
+      const errorObj = { code: 500, message: 'Internal Server Error' };
+      const result = err(errorObj);
+      expect(result).toEqual({ ok: false, error: errorObj });
+    });
+
+    it('should work with arrays', () => {
+      const errorArray = ['error1', 'error2'];
+      const result = err(errorArray);
+      expect(result).toEqual({ ok: false, error: errorArray });
+    });
+
+    it('should work with numbers', () => {
+      const result = err(404);
+      expect(result).toEqual({ ok: false, error: 404 });
+    });
   });
 
   describe('isOk()', () => {
