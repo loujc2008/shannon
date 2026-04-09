@@ -1,10 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
-  matchesBillingTextPattern,
-  matchesBillingApiPattern,
-  isSpendingCapBehavior,
+  BILLING_API_PATTERNS,
   BILLING_TEXT_PATTERNS,
-  BILLING_API_PATTERNS
+  isSpendingCapBehavior,
+  matchesBillingApiPattern,
+  matchesBillingTextPattern,
 } from './billing-detection.js';
 
 describe('billing-detection', () => {

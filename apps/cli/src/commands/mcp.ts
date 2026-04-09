@@ -58,7 +58,7 @@ export async function runMcpServer(version: string) {
     const workers = listRunningWorkers();
     if (workers) {
       result += 'Workers:\n';
-      result += workers + '\n';
+      result += `${workers}\n`;
     } else {
       result += 'Workers: none running\n';
     }

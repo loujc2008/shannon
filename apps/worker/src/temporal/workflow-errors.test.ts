@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { formatWorkflowError } from './workflow-errors.js';
 
 describe('formatWorkflowError', () => {
@@ -34,40 +34,40 @@ describe('formatWorkflowError', () => {
 
   it('should extract error type and add it as a segment', () => {
     const error = new Error('Custom error message');
-    (error as any).type = 'CustomErrorType';
+    Object.assign(error, { type: 'CustomErrorType' });
     expect(formatWorkflowError(error, null, null)).toBe('Pipeline failed|CustomErrorType|Custom error message');
   });
 
   it('should match error type to REMEDIATION_HINTS', () => {
     const error = new Error('Auth failed');
-    (error as any).type = 'AuthenticationError';
+    Object.assign(error, { type: 'AuthenticationError' });
     expect(formatWorkflowError(error, null, null)).toBe(
-      'Pipeline failed|AuthenticationError|Auth failed|Hint: Verify ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN in .env is valid and not expired.'
+      'Pipeline failed|AuthenticationError|Auth failed|Hint: Verify ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN in .env is valid and not expired.',
     );
   });
 
   it('should unwrap activity error causes to find the innermost error with a type', () => {
     const innermostError = new Error('Inner auth failure');
-    (innermostError as any).type = 'AuthenticationError';
+    Object.assign(innermostError, { type: 'AuthenticationError' });
 
     const middleError = new Error('Middle error');
-    (middleError as any).cause = innermostError;
+    Object.assign(middleError, { cause: innermostError });
 
     const outerError = new Error('Outer error');
-    (outerError as any).cause = middleError;
+    Object.assign(outerError, { cause: middleError });
 
     expect(formatWorkflowError(outerError, null, null)).toBe(
-      'Pipeline failed|AuthenticationError|Inner auth failure|Hint: Verify ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN in .env is valid and not expired.'
+      'Pipeline failed|AuthenticationError|Inner auth failure|Hint: Verify ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN in .env is valid and not expired.',
     );
   });
 
   it('should ignore types in the chain that are not strings', () => {
     const innerError = new Error('Inner error');
-    (innerError as any).type = 'ValidType';
+    Object.assign(innerError, { type: 'ValidType' });
 
     const outerError = new Error('Outer error');
-    (outerError as any).type = 123; // invalid type, should keep digging
-    (outerError as any).cause = innerError;
+    Object.assign(outerError, { type: 123 }); // invalid type, should keep digging
+    Object.assign(outerError, { cause: innerError });
 
     expect(formatWorkflowError(outerError, null, null)).toBe('Pipeline failed|ValidType|Inner error');
   });
@@ -76,7 +76,7 @@ describe('formatWorkflowError', () => {
     const innerError = new Error('Inner error');
 
     const outerError = new Error('Outer error');
-    (outerError as any).cause = innerError;
+    Object.assign(outerError, { cause: innerError });
 
     expect(formatWorkflowError(outerError, null, null)).toBe('Pipeline failed|Outer error');
   });

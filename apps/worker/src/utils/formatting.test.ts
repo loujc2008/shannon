@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { calculatePercentage, formatDuration, formatTimestamp, extractAgentType } from './formatting.js';
+import { describe, expect, it } from 'vitest';
+import { calculatePercentage, extractAgentType, formatDuration, formatTimestamp } from './formatting.js';
 
 describe('calculatePercentage', () => {
   it('calculates percentage correctly for normal values', () => {
