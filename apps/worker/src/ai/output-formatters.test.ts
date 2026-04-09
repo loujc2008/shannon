@@ -1,54 +1,59 @@
-import { describe, expect, it, vi } from 'vitest';
-import { getAgentPrefix } from './output-formatters.js';
+import { describe, it, expect } from 'vitest';
+import { filterJsonToolCalls } from './output-formatters.js';
 
-vi.mock('../session-manager.js', () => ({
-  AGENTS: {
-    'injection-vuln': { displayName: 'Injection vuln agent' },
-    'xss-vuln': { displayName: 'XSS vuln agent' },
-    'auth-vuln': { displayName: 'Auth vuln agent' },
-    'authz-vuln': { displayName: 'Authz vuln agent' },
-    'ssrf-vuln': { displayName: 'SSRF vuln agent' },
-    'injection-exploit': { displayName: 'Injection exploit agent' },
-    'xss-exploit': { displayName: 'XSS exploit agent' },
-    'auth-exploit': { displayName: 'Auth exploit agent' },
-    'authz-exploit': { displayName: 'Authz exploit agent' },
-    'ssrf-exploit': { displayName: 'SSRF exploit agent' },
-  },
-}));
-
-describe('getAgentPrefix', () => {
-  it('should return exact match prefixes using AGENTS displayName', () => {
-    expect(getAgentPrefix('Execution by Injection vuln agent')).toBe('[Injection]');
-    expect(getAgentPrefix('Execution by XSS vuln agent')).toBe('[XSS]');
-    expect(getAgentPrefix('Execution by Auth vuln agent')).toBe('[Auth]');
-    expect(getAgentPrefix('Execution by Authz vuln agent')).toBe('[Authz]');
-    expect(getAgentPrefix('Execution by SSRF vuln agent')).toBe('[SSRF]');
-
-    expect(getAgentPrefix('Execution by Injection exploit agent')).toBe('[Injection]');
-    expect(getAgentPrefix('Execution by XSS exploit agent')).toBe('[XSS]');
-    expect(getAgentPrefix('Execution by Auth exploit agent')).toBe('[Auth]');
-    expect(getAgentPrefix('Execution by Authz exploit agent')).toBe('[Authz]');
-    expect(getAgentPrefix('Execution by SSRF exploit agent')).toBe('[SSRF]');
+describe('filterJsonToolCalls', () => {
+  it('handles null or undefined', () => {
+    expect(filterJsonToolCalls(null)).toBe('');
+    expect(filterJsonToolCalls(undefined)).toBe('');
   });
 
-  it('should return fallback partial match prefixes', () => {
-    expect(getAgentPrefix('Testing injection vulnerability')).toBe('[Injection]');
-    expect(getAgentPrefix('Testing xss vulnerability')).toBe('[XSS]');
-    expect(getAgentPrefix('Testing authz vulnerability')).toBe('[Authz]');
-    expect(getAgentPrefix('Testing auth vulnerability')).toBe('[Auth]');
-    expect(getAgentPrefix('Testing ssrf vulnerability')).toBe('[SSRF]');
+  it('handles regular text without modifications', () => {
+    const text = 'Hello world\nThis is a test\nGoodbye';
+    expect(filterJsonToolCalls(text)).toBe(text);
   });
 
-  it('should prioritize authz over auth in fallback partial match', () => {
-    // Both 'authz' and 'auth' are present, but 'authz' comes first in fallback list
-    expect(getAgentPrefix('Testing auth and authz vulnerabilities')).toBe('[Authz]');
-    expect(getAgentPrefix('Testing authz and auth vulnerabilities')).toBe('[Authz]');
+  it('removes generic tool calls that are not handled specially', () => {
+    const text = 'Hello\n{"type":"tool_use","name":"SomeTool","id":"123","input":{"foo":"bar"}}\nWorld';
+    expect(filterJsonToolCalls(text)).toBe('Hello\nWorld');
   });
 
-  it('should return default prefix when no match is found', () => {
-    expect(getAgentPrefix('Unknown agent execution')).toBe('[Agent]');
-    expect(getAgentPrefix('')).toBe('[Agent]');
-    expect(getAgentPrefix('recon')).toBe('[Agent]');
-    expect(getAgentPrefix('pre-recon')).toBe('[Agent]');
+  it('formats Task tool calls properly', () => {
+    const text = 'Starting...\n{"type":"tool_use","name":"Task","id":"123","input":{"description":"search agent"}}\nDone';
+    expect(filterJsonToolCalls(text)).toBe('Starting...\n🚀 Launching search agent\nDone');
+  });
+
+  it('formats Task tool calls with missing description', () => {
+    const text = '{"type":"tool_use","name":"Task","id":"123","input":{}}';
+    expect(filterJsonToolCalls(text)).toBe('🚀 Launching analysis agent');
+  });
+
+  it('formats TodoWrite tool calls properly with completed task', () => {
+    const text = '{"type":"tool_use","name":"TodoWrite","id":"123","input":{"todos":[{"id":"1","status":"completed","content":"test item"}]}}';
+    expect(filterJsonToolCalls(text)).toBe('✅ test item');
+  });
+
+  it('formats TodoWrite tool calls properly with in_progress task', () => {
+    const text = '{"type":"tool_use","name":"TodoWrite","id":"123","input":{"todos":[{"id":"1","status":"in_progress","content":"test item"}]}}';
+    expect(filterJsonToolCalls(text)).toBe('🔄 test item');
+  });
+
+  it('formats Bash tool calls containing playwright-cli', () => {
+    const text = '{"type":"tool_use","name":"Bash","id":"123","input":{"command":"npx playwright-cli goto https://example.com"}}';
+    expect(filterJsonToolCalls(text)).toBe('🌐 Navigating to example.com');
+  });
+
+  it('skips Bash tool calls not containing playwright-cli', () => {
+    const text = 'Hello\n{"type":"tool_use","name":"Bash","id":"123","input":{"command":"ls -la"}}\nWorld';
+    expect(filterJsonToolCalls(text)).toBe('Hello\nWorld');
+  });
+
+  it('handles invalid JSON gracefully', () => {
+    const text = '{"type":"tool_use","name":"Task",...';
+    expect(filterJsonToolCalls(text)).toBe('{"type":"tool_use","name":"Task",...');
+  });
+
+  it('ignores empty lines in input', () => {
+    const text = 'Line 1\n\n\nLine 2';
+    expect(filterJsonToolCalls(text)).toBe('Line 1\nLine 2');
   });
 });
