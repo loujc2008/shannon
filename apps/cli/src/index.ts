@@ -14,6 +14,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { build } from './commands/build.js';
 import { logs } from './commands/logs.js';
+import { runMcpServer } from './commands/mcp.js';
 import { setup } from './commands/setup.js';
 import { start } from './commands/start.js';
 import { status } from './commands/status.js';
@@ -60,6 +61,7 @@ Usage:${
   ${prefix} uninstall                                    Remove ~/.shannon/ and all data`
   }
   ${prefix} info                                         Show splash screen
+  ${prefix} mcp                                          Start MCP Server
   ${prefix} help                                         Show this help
 
 Options for 'start':
@@ -225,6 +227,9 @@ switch (command) {
     break;
   case 'info':
     displaySplash(getMode() === 'local' ? undefined : getVersion());
+    break;
+  case 'mcp':
+    await runMcpServer(getVersion());
     break;
   case 'help':
   case '--help':
