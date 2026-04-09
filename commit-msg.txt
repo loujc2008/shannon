@@ -1,0 +1,6 @@
+🧹 refactor(ai): replace console.log with logger in message handlers
+
+🎯 What: Replaced hardcoded console.log statements in apps/worker/src/ai/message-handlers.ts and apps/worker/src/ai/claude-executor.ts with injected ActivityLogger instance using logger.info().
+💡 Why: Hardcoded console logs pollute standard output streams, bypassing structured logging frameworks and hindering log aggregation/monitoring in production. Using the injected logger ensures output follows the established formatting and routing configured via Temporal workflows.
+✅ Verification: Verified by updating all callers and executing pnpm check to ensure there are no typing errors from passing down the new logger parameter.
+✨ Result: Improved codebase maintainability by centralizing and unifying log emission strategies.
