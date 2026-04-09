@@ -202,7 +202,7 @@ function handleAssistantMessage(message: AssistantMessage, turnCount: number): A
 }
 
 // Final message of a query with cost/duration info
-function handleResultMessage(message: ResultMessage): ResultData {
+function handleResultMessage(message: ResultMessage, logger: ActivityLogger): ResultData {
   const result: ResultData = {
     result: message.result || null,
     cost: message.total_cost_usd || 0,
@@ -219,7 +219,7 @@ function handleResultMessage(message: ResultMessage): ResultData {
   if (message.stop_reason !== undefined) {
     result.stop_reason = message.stop_reason;
     if (message.stop_reason && message.stop_reason !== 'end_turn') {
-      console.log(`    Stop reason: ${message.stop_reason}`);
+      logger.info(`    Stop reason: ${message.stop_reason}`);
     }
   }
 
@@ -255,9 +255,9 @@ function handleToolResultMessage(message: ToolResultMessage): ToolResultData {
   };
 }
 
-function outputLines(lines: string[]): void {
+function outputLines(lines: string[], logger: ActivityLogger): void {
   for (const line of lines) {
-    console.log(line);
+    logger.info(line);
   }
 }
 
@@ -292,7 +292,7 @@ export async function dispatchMessage(
 
       if (assistantResult.cleanedContent.trim()) {
         progress.stop();
-        outputLines(formatAssistantOutput(assistantResult.cleanedContent, execContext, turnCount, description));
+        outputLines(formatAssistantOutput(assistantResult.cleanedContent, execContext, turnCount, description), logger);
         progress.start();
       }
 
@@ -327,21 +327,21 @@ export async function dispatchMessage(
 
     case 'tool_use': {
       const toolData = handleToolUseMessage(message as unknown as ToolUseMessage);
-      outputLines(formatToolUseOutput(toolData.toolName, toolData.parameters));
+      outputLines(formatToolUseOutput(toolData.toolName, toolData.parameters), logger);
       await auditLogger.logToolStart(toolData.toolName, toolData.parameters);
       return { type: 'continue' };
     }
 
     case 'tool_result': {
       const toolResultData = handleToolResultMessage(message as unknown as ToolResultMessage);
-      outputLines(formatToolResultOutput(toolResultData.displayContent));
+      outputLines(formatToolResultOutput(toolResultData.displayContent), logger);
       await auditLogger.logToolEnd(toolResultData.content);
       return { type: 'continue' };
     }
 
     case 'result': {
-      const resultData = handleResultMessage(message as ResultMessage);
-      outputLines(formatResultOutput(resultData, !execContext.useCleanOutput));
+      const resultData = handleResultMessage(message as ResultMessage, logger);
+      outputLines(formatResultOutput(resultData, !execContext.useCleanOutput), logger);
 
       if (resultData.subtype === 'error_max_structured_output_retries') {
         return {

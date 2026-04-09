@@ -42,9 +42,9 @@ export interface ClaudePromptResult {
   structuredOutput?: unknown;
 }
 
-function outputLines(lines: string[]): void {
+function outputLines(lines: string[], logger: ActivityLogger): void {
   for (const line of lines) {
-    console.log(line);
+    logger.info(line);
   }
 }
 
@@ -259,7 +259,7 @@ export async function runClaudePrompt(
 
     await auditLogger.logError(err, duration, turnCount);
     progress.stop();
-    outputLines(formatErrorOutput(err, execContext, description, duration, sourceDir, isRetryableError(err)));
+    outputLines(formatErrorOutput(err, execContext, description, duration, sourceDir, isRetryableError(err)), logger);
     await writeErrorLog(err, sourceDir, fullPrompt, duration);
 
     return {
