@@ -141,24 +141,24 @@ export async function start(args: StartArgs): Promise<void> {
   let workflowId = '';
   let started = false;
   let attempts = 0;
-  const pollInterval = setInterval(() => {
+  let pollTimer: NodeJS.Timeout;
+
+  const poll = async () => {
     attempts++;
     if (attempts > 60) {
-      clearInterval(pollInterval);
       process.stdout.write('\n');
       console.error('Timeout waiting for workflow to start');
       process.exit(1);
     }
 
     try {
-      const session = JSON.parse(fs.readFileSync(sessionJson, 'utf-8'));
+      const session = JSON.parse(await fs.promises.readFile(sessionJson, 'utf-8'));
       const resumeAttempts: { workflowId: string }[] = session.session?.resumeAttempts ?? [];
 
       // Fresh: session.json appears with originalWorkflowId. Resume: new resumeAttempts entry.
       const ready = isResume ? resumeAttempts.length > initialResumeCount : !!session.session?.originalWorkflowId;
 
       if (ready) {
-        clearInterval(pollInterval);
         started = true;
 
         // Latest workflow ID: last resume attempt, or originalWorkflowId for fresh scans
@@ -173,14 +173,18 @@ export async function start(args: StartArgs): Promise<void> {
       // File doesn't exist yet
     }
     process.stdout.write('.');
-  }, 2000);
+    if (!cleaned && !started) {
+      pollTimer = setTimeout(poll, 2000);
+    }
+  };
+  poll().catch(console.error);
 
   // Stop the worker container only if it hasn't started yet
   let cleaned = false;
   const cleanup = (): void => {
     if (cleaned || started) return;
     cleaned = true;
-    clearInterval(pollInterval);
+    if (pollTimer) clearTimeout(pollTimer);
     console.log(`\nStopping worker ${containerName}...`);
     try {
       execFileSync('docker', ['stop', containerName], { stdio: 'pipe' });
