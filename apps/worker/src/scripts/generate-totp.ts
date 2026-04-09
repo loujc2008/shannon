@@ -91,7 +91,7 @@ function parseSecret(argv: string[]): string {
       return next;
     }
   }
-  return '';
+  return process.env.SHANNON_TOTP_SECRET || '';
 }
 
 // === Main ===
@@ -100,7 +100,13 @@ function main(): void {
   const secret = parseSecret(process.argv);
 
   if (!secret) {
-    console.log(JSON.stringify({ status: 'error', message: 'Missing required --secret argument', retryable: false }));
+    console.log(
+      JSON.stringify({
+        status: 'error',
+        message: 'Missing required --secret argument or SHANNON_TOTP_SECRET environment variable',
+        retryable: false,
+      }),
+    );
     process.exit(1);
   }
 
