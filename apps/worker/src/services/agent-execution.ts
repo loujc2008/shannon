@@ -138,6 +138,12 @@ export class AgentExecutionService {
 
     // 5. Execute agent
     const outputFormat = getOutputFormat(agentName);
+
+    const extraEnv: Record<string, string> = {};
+    if (distributedConfig?.authentication?.credentials?.totp_secret) {
+      extraEnv.SHANNON_TOTP_SECRET = distributedConfig.authentication.credentials.totp_secret;
+    }
+
     const result: ClaudePromptResult = await runClaudePrompt(
       prompt,
       repoPath,
@@ -148,6 +154,7 @@ export class AgentExecutionService {
       logger,
       AGENTS[agentName].modelTier,
       outputFormat,
+      extraEnv,
     );
 
     // 6. Spending cap check - defense-in-depth
