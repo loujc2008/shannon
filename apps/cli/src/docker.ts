@@ -6,7 +6,6 @@
  */
 
 import { type ChildProcess, execFileSync, spawn } from 'node:child_process';
-import crypto from 'node:crypto';
 import os from 'node:os';
 import path from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
@@ -30,7 +29,7 @@ function getComposeFile(): string {
 
 /** Generate an 8-char random hex suffix for container/queue names. */
 export function randomSuffix(): string {
-  return crypto.randomBytes(4).toString('hex');
+  return Math.random().toString(36).substring(2, 8);
 }
 
 /** Run a command silently, return true if it succeeds. */
