@@ -46,7 +46,7 @@ export async function start(args: StartArgs): Promise<void> {
   // 4. Ensure workspaces dir is writable by container user (UID 1001)
   const workspacesDir = getWorkspacesDir();
   fs.mkdirSync(workspacesDir, { recursive: true });
-  fs.chmodSync(workspacesDir, 0o777);
+  fs.chmodSync(workspacesDir, 0o755);
 
   // 5. Handle router env
   if (useRouter) {
@@ -72,7 +72,7 @@ export async function start(args: StartArgs): Promise<void> {
   for (const dir of ['deliverables', 'scratchpad', '.playwright-cli']) {
     const dirPath = path.join(workspacePath, dir);
     fs.mkdirSync(dirPath, { recursive: true });
-    fs.chmodSync(dirPath, 0o777);
+    fs.chmodSync(dirPath, 0o755);
   }
 
   // 10. Pre-create overlay mount points (Linux :ro mounts can't auto-create them)
