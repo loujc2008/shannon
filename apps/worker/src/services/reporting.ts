@@ -25,16 +25,17 @@ export async function assembleFinalReport(sourceDir: string, logger: ActivityLog
     { name: 'Authorization', path: 'authz_exploitation_evidence.md', required: false },
   ];
 
-  const sections: string[] = [];
-
-  for (const file of deliverableFiles) {
+  // Concurrent I/O: Read all deliverable files in parallel
+  const sectionPromises = deliverableFiles.map(async (file) => {
     const filePath = path.join(sourceDir, '.shannon', 'deliverables', file.path);
     try {
       if (await fs.pathExists(filePath)) {
         const content = await fs.readFile(filePath, 'utf8');
-        sections.push(content);
         logger.info(`Added ${file.name} findings`);
-      } else if (file.required) {
+        return content;
+      }
+
+      if (file.required) {
         throw new PentestError(
           `Required deliverable file not found: ${file.path}`,
           'filesystem',
@@ -42,17 +43,22 @@ export async function assembleFinalReport(sourceDir: string, logger: ActivityLog
           { deliverableFile: file.path, sourceDir },
           ErrorCode.DELIVERABLE_NOT_FOUND,
         );
-      } else {
-        logger.info(`No ${file.name} deliverable found`);
       }
+
+      logger.info(`No ${file.name} deliverable found`);
+      return null;
     } catch (error) {
       if (file.required) {
         throw error;
       }
       const err = error as Error;
       logger.warn(`Could not read ${file.path}: ${err.message}`);
+      return null;
     }
-  }
+  });
+
+  const results = await Promise.all(sectionPromises);
+  const sections = results.filter((content): content is string => content !== null);
 
   const finalContent = sections.join('\n\n');
   const deliverablesDir = path.join(sourceDir, '.shannon', 'deliverables');
